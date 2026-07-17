@@ -1667,10 +1667,13 @@ class Everpsclickandcollect extends CarrierModule
         $carrier = new Carrier(
             (int) $order->id_carrier
         );
+        $esc = function ($value) {
+            return Tools::safeOutput((string) $value);
+        };
         $tdStyle = 'style="padding:0.3rem 1rem 0.3rem 1rem;"';
         $tableStyle = 'style="border-collapse: collapse;width:100%;"';
         $items = '';
-        $table = '<h4>'.$order->reference.'</h4>';
+        $table = '<h4>'.$esc($order->reference).'</h4>';
         // First global datas, as customer
         $table .= '<table '.$tableStyle.'>';
         // Global datas header
@@ -1697,22 +1700,22 @@ class Everpsclickandcollect extends CarrierModule
         // Global datas infos
         $table .= '<tr>';
         $table .=  '<td '.$tdStyle.'>';
-        $table .= $order->reference;
+        $table .= $esc($order->reference);
         $table .= '</td>';
         $table .=  '<td '.$tdStyle.'>';
-        $table .= $customer->firstname.' '.$customer->lastname;
+        $table .= $esc($customer->firstname.' '.$customer->lastname);
         $table .= '</td>';
         $table .=  '<td '.$tdStyle.'>';
-        $table .= $address->address1.' '.$order->address2;
+        $table .= $esc($address->address1.' '.$order->address2);
         $table .= '</td>';
         $table .=  '<td '.$tdStyle.'>';
-        $table .= $address->postcode;
+        $table .= $esc($address->postcode);
         $table .= '</td>';
         $table .=  '<td '.$tdStyle.'>';
-        $table .= $address->city;
+        $table .= $esc($address->city);
         $table .= '</td>';
         $table .=  '<td '.$tdStyle.'>';
-        $table .= $address->phone;
+        $table .= $esc($address->phone);
         $table .= '</td>';
         $table .= '</tr>';
         $table .= '<table>';
@@ -1736,13 +1739,13 @@ class Everpsclickandcollect extends CarrierModule
         foreach ($cart->getProducts() as $product) {
             $table .= '<tr>';
             $table .=  '<td '.$tdStyle.'>';
-            $table .= $product['name'];
+            $table .= $esc($product['name']);
             $table .= '</td>';
             $table .=  '<td '.$tdStyle.'>';
-            $table .= $product['reference'];
+            $table .= $esc($product['reference']);
             $table .= '</td>';
             $table .=  '<td '.$tdStyle.'>';
-            $table .= $product['cart_quantity'];
+            $table .= (int) $product['cart_quantity'];
             $table .= '</td>';
             $table .= '</tr>';
         }
@@ -1772,19 +1775,19 @@ class Everpsclickandcollect extends CarrierModule
         // Others datas infos
         $table .= '<tr>';
         $table .=  '<td '.$tdStyle.'>';
-        $table .= $order->payment;
+        $table .= $esc($order->payment);
         $table .= '</td>';
         $table .=  '<td '.$tdStyle.'>';
-        $table .= Tools::displayDate($order->date_add);
+        $table .= $esc(Tools::displayDate($order->date_add));
         $table .= '</td>';
         $table .=  '<td '.$tdStyle.'>';
-        $table .= Tools::displayPrice($order->total_paid);
+        $table .= $esc(Tools::displayPrice($order->total_paid));
         $table .= '</td>';
         $table .=  '<td '.$tdStyle.'>';
-        $table .= $carrier->name;
+        $table .= $esc($carrier->name);
         $table .= '</td>';
         $table .=  '<td '.$tdStyle.'>';
-        $table .= Tools::displayPrice($order->total_shipping);
+        $table .= $esc(Tools::displayPrice($order->total_shipping));
         $table .= '</td>';
         $table .= '</tr>';
         $table .= '<table>';
