@@ -44,24 +44,23 @@ class EverpsclickandcollectAjaxEverShippingStoreModuleFrontController extends Mo
                 'error' => $this->module->l('ID store is not valid')
             )));
         }
-        if ((bool)Configuration::get('EVERPSCLICKANDCOLLECT_ASK_DATE') === true
-            && Tools::getValue('everclickncollect_date')
-            && !Validate::isString(Tools::getValue('everclickncollect_date'))
-        ) {
-            die(json_encode(array(
-                'return' => false,
-                'error' => $this->module->l('Date is not valid')
-            )));
-        } else {
-            $this->context->cookie->__set(
-                'everclickncollect_date',
-                Tools::getValue('everclickncollect_date')
-            );
-        }
-        if ((bool)Configuration::get('EVERPSCLICKANDCOLLECT_ASK_DATE') === true) {
-            $delivery_date = pSQL(Tools::getValue('everclickncollect_date'));
-        } else {
-            $delivery_date = null;
+        $askDate = (bool) Configuration::get('EVERPSCLICKANDCOLLECT_ASK_DATE');
+        $delivery_date = null;
+        if ($askDate) {
+            $rawDate = Tools::getValue('everclickncollect_date');
+            if ($rawDate) {
+                if (!Validate::isDate($rawDate)) {
+                    die(json_encode(array(
+                        'return' => false,
+                        'error' => $this->module->l('Date is not valid')
+                    )));
+                }
+                $delivery_date = pSQL($rawDate);
+                $this->context->cookie->__set(
+                    'everclickncollect_date',
+                    $rawDate
+                );
+            }
         }
         $cart = Context::getContext()->cart;
         Db::getInstance()->insert(
