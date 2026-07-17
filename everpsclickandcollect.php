@@ -1513,7 +1513,7 @@ class Everpsclickandcollect extends CarrierModule
                         'PS_LOGO',
                         null,
                         null,
-                        (int) $id_shop
+                        (int) $order->id_shop
                     ),
                     '{message}' => $items,
                 ),
