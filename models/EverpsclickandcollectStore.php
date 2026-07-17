@@ -189,12 +189,12 @@ class EverpsclickandcollectStore extends ObjectModel
     /**
      * Renvoie l'id_vendor associé à un magasin de retrait (ou null).
      */
-    public static function getVendor($id_store)
+    public static function getVendor(int $id_store): ?int
     {
         $sql = new DbQuery();
         $sql->select('id_vendor');
         $sql->from('everpsclickandcollect_store');
-        $sql->where('id_store = ' . (int) $id_store);
+        $sql->where('id_store = ' . $id_store);
         $value = Db::getInstance()->getValue($sql);
         if ($value === false || $value === null || $value === '') {
             return null;
@@ -206,33 +206,29 @@ class EverpsclickandcollectStore extends ObjectModel
      * Persiste (INSERT ou UPDATE) l'assignation vendeur d'un magasin.
      * $id_vendor à null détache le magasin de tout vendeur.
      */
-    public static function setVendor($id_store, $id_vendor)
+    public static function setVendor(int $id_store, ?int $id_vendor): bool
     {
-        $id_store = (int) $id_store;
         if ($id_store <= 0) {
             return false;
         }
-        $data = array(
-            'id_store' => $id_store,
-            'id_vendor' => ($id_vendor === null || $id_vendor === '')
-                ? null
-                : (int) $id_vendor,
-        );
         $exists = (int) Db::getInstance()->getValue(
             'SELECT id_everpsclickandcollect_store FROM `'
             . _DB_PREFIX_ . 'everpsclickandcollect_store` '
             . 'WHERE id_store = ' . $id_store
         );
         if ($exists > 0) {
-            return Db::getInstance()->update(
+            return (bool) Db::getInstance()->update(
                 'everpsclickandcollect_store',
-                array('id_vendor' => $data['id_vendor']),
+                array('id_vendor' => $id_vendor),
                 'id_store = ' . $id_store
             );
         }
-        return Db::getInstance()->insert(
+        return (bool) Db::getInstance()->insert(
             'everpsclickandcollect_store',
-            $data
+            array(
+                'id_store' => $id_store,
+                'id_vendor' => $id_vendor,
+            )
         );
     }
 }

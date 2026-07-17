@@ -187,7 +187,7 @@ class Everpsclickandcollect extends CarrierModule
         return $this->html;
     }
 
-    protected function renderVendorMapping()
+    protected function renderVendorMapping(): string
     {
         $langId = (int) $this->context->language->id;
         $rawStores = Store::getStores($langId);
@@ -214,7 +214,7 @@ class Everpsclickandcollect extends CarrierModule
         );
     }
 
-    protected function postProcessVendorMapping()
+    protected function postProcessVendorMapping(): void
     {
         $rawMap = Tools::getValue('vendor_map');
         if (!is_array($rawMap)) {
@@ -1369,7 +1369,7 @@ class Everpsclickandcollect extends CarrierModule
      *  - Le premier module renvoyant un tableau valide gagne (les modules
      *    peuvent se chaîner en s'appelant entre eux si besoin).
      */
-    protected function applyStoresFilterHook(array $stores)
+    protected function applyStoresFilterHook(array $stores): array
     {
         $hookResults = Hook::exec(
             'actionFilterClickCollectStores',
@@ -1640,7 +1640,7 @@ class Everpsclickandcollect extends CarrierModule
      * Renvoie null si aucun module ne prend en charge le split (fallback
      * sur le comportement mono-magasin historique).
      */
-    protected function splitCartByVendor(Cart $cart, Order $order)
+    protected function splitCartByVendor(Cart $cart, Order $order): ?array
     {
         $results = Hook::exec(
             'actionSplitClickCollectCartByVendor',
@@ -1665,7 +1665,7 @@ class Everpsclickandcollect extends CarrierModule
         return null;
     }
 
-    protected function sendOrderEmailToStore(Order $order, Store $store, ?array $products = null)
+    protected function sendOrderEmailToStore(Order $order, Store $store, ?array $products = null): void
     {
         $items = $this->getOrderDatasForEmail($order, $products);
         $subject = $this->l('An order has been placed on your store');
@@ -1820,7 +1820,7 @@ class Everpsclickandcollect extends CarrierModule
         return $order_states;
     }
 
-    protected function getOrderDatasForEmail($order, ?array $products = null)
+    protected function getOrderDatasForEmail(Order $order, ?array $products = null): string
     {
         $cart = new Cart((int) $order->id_cart);
         $customer = new Customer((int) $order->id_customer);
