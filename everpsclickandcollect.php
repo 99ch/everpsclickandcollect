@@ -1292,6 +1292,48 @@ class Everpsclickandcollect extends CarrierModule
             $store = (array)array_merge((array)$store, (array)$store_hours);
         }
 
+        $stores = $this->applyStoresFilterHook($stores);
+
+        return $stores;
+    }
+
+    /**
+     * Laisse un module marketplace (ou tout autre listener) filtrer la liste
+     * des magasins de retrait selon le panier, le client ou tout autre
+     * critère métier (assignation vendeur, périmètre géographique, etc.).
+     *
+     * Contrat du hook `actionFilterClickCollectStores` :
+     *  - Reçoit `stores` (array), `cart` (Cart|null), `id_customer` (int)
+     *  - Renvoie soit `null`/`false` (aucun filtrage), soit un tableau de
+     *    magasins à conserver, avec la même structure que `$stores`.
+     *  - Le premier module renvoyant un tableau valide gagne (les modules
+     *    peuvent se chaîner en s'appelant entre eux si besoin).
+     */
+    protected function applyStoresFilterHook(array $stores)
+    {
+        $hookResults = Hook::exec(
+            'actionFilterClickCollectStores',
+            array(
+                'stores' => $stores,
+                'cart' => isset($this->context->cart) ? $this->context->cart : null,
+                'id_customer' => isset($this->context->customer)
+                    ? (int) $this->context->customer->id
+                    : 0,
+            ),
+            null,
+            true
+        );
+
+        if (!is_array($hookResults)) {
+            return $stores;
+        }
+
+        foreach ($hookResults as $moduleResult) {
+            if (is_array($moduleResult)) {
+                return $moduleResult;
+            }
+        }
+
         return $stores;
     }
 
