@@ -1822,150 +1822,32 @@ class Everpsclickandcollect extends CarrierModule
 
     protected function getOrderDatasForEmail($order, ?array $products = null)
     {
-        $cart = new Cart(
-            (int) $order->id_cart
-        );
-        $customer = new Customer(
-            (int) $order->id_customer
-        );
-        $address = new Address(
-            (int) $order->id_address_delivery
-        );
-        $carrier = new Carrier(
-            (int) $order->id_carrier
-        );
+        $cart = new Cart((int) $order->id_cart);
+        $customer = new Customer((int) $order->id_customer);
+        $address = new Address((int) $order->id_address_delivery);
+        $carrier = new Carrier((int) $order->id_carrier);
         if ($products === null) {
             $products = $cart->getProducts();
         }
-        $esc = function ($value) {
-            return Tools::safeOutput((string) $value);
-        };
-        $tdStyle = 'style="padding:0.3rem 1rem 0.3rem 1rem;"';
-        $tableStyle = 'style="border-collapse: collapse;width:100%;"';
-        $items = '';
-        $table = '<h4>'.$esc($order->reference).'</h4>';
-        // First global datas, as customer
-        $table .= '<table '.$tableStyle.'>';
-        // Global datas header
-        $table .= '<tr style="background-color:#e3e3e3">';
-        $table .=  '<td '.$tdStyle.'>';
-        $table .= $this->l('Order reference');
-        $table .=  '</td>';
-        $table .=  '<td '.$tdStyle.'>';
-        $table .= $this->l('Customer');
-        $table .=  '</td>';
-        $table .=  '<td '.$tdStyle.'>';
-        $table .= $this->l('Address');
-        $table .=  '</td>';
-        $table .=  '<td '.$tdStyle.'>';
-        $table .= $this->l('Postcode');
-        $table .=  '</td>';
-        $table .=  '<td '.$tdStyle.'>';
-        $table .= $this->l('City');
-        $table .=  '</td>';
-        $table .=  '<td '.$tdStyle.'>';
-        $table .= $this->l('Phone');
-        $table .=  '</td>';
-        $table .=  '</tr>';
-        // Global datas infos
-        $table .= '<tr>';
-        $table .=  '<td '.$tdStyle.'>';
-        $table .= $esc($order->reference);
-        $table .= '</td>';
-        $table .=  '<td '.$tdStyle.'>';
-        $table .= $esc($customer->firstname.' '.$customer->lastname);
-        $table .= '</td>';
-        $table .=  '<td '.$tdStyle.'>';
-        $table .= $esc($address->address1.' '.$order->address2);
-        $table .= '</td>';
-        $table .=  '<td '.$tdStyle.'>';
-        $table .= $esc($address->postcode);
-        $table .= '</td>';
-        $table .=  '<td '.$tdStyle.'>';
-        $table .= $esc($address->city);
-        $table .= '</td>';
-        $table .=  '<td '.$tdStyle.'>';
-        $table .= $esc($address->phone);
-        $table .= '</td>';
-        $table .= '</tr>';
-        $table .= '<table>';
-        // End global datas
-        // Now products
-        $table .= '<h4>'.$this->l('Ordered products').'</h4>';
-        $table .= '<table '.$tableStyle.'>';
-        // Products header
-        $table .= '<tr style="background-color:#e3e3e3">';
-        $table .=  '<td '.$tdStyle.'>';
-        $table .= $this->l('Product name');
-        $table .=  '</td>';
-        $table .=  '<td '.$tdStyle.'>';
-        $table .= $this->l('Product reference');
-        $table .=  '</td>';
-        $table .=  '<td '.$tdStyle.'>';
-        $table .= $this->l('Product quantity');
-        $table .=  '</td>';
-        $table .=  '</tr>';
-        // Products infos on a loop
-        foreach ($products as $product) {
-            $table .= '<tr>';
-            $table .=  '<td '.$tdStyle.'>';
-            $table .= $esc($product['name']);
-            $table .= '</td>';
-            $table .=  '<td '.$tdStyle.'>';
-            $table .= $esc($product['reference']);
-            $table .= '</td>';
-            $table .=  '<td '.$tdStyle.'>';
-            $table .= (int) $product['cart_quantity'];
-            $table .= '</td>';
-            $table .= '</tr>';
-        }
-        $table .= '<table>';
-        // End products
-        // Now others datas
-        $table .= '<h4>'.$this->l('Order informations').'</h4>';
-        $table .= '<table '.$tableStyle.'>';
-        // Others datas header
-        $table .= '<tr style="background-color:#e3e3e3">';
-        $table .=  '<td '.$tdStyle.'>';
-        $table .= $this->l('Payment method');
-        $table .=  '</td>';
-        $table .=  '<td '.$tdStyle.'>';
-        $table .= $this->l('Order date add');
-        $table .=  '</td>';
-        $table .=  '<td '.$tdStyle.'>';
-        $table .= $this->l('Total paid');
-        $table .=  '</td>';
-        $table .=  '<td '.$tdStyle.'>';
-        $table .= $this->l('Shipping method');
-        $table .=  '</td>';
-        $table .=  '<td '.$tdStyle.'>';
-        $table .= $this->l('Total shipping');
-        $table .=  '</td>';
-        $table .=  '</tr>';
-        // Others datas infos
-        $table .= '<tr>';
-        $table .=  '<td '.$tdStyle.'>';
-        $table .= $esc($order->payment);
-        $table .= '</td>';
-        $table .=  '<td '.$tdStyle.'>';
-        $table .= $esc(Tools::displayDate($order->date_add));
-        $table .= '</td>';
-        $table .=  '<td '.$tdStyle.'>';
-        $table .= $esc(Tools::displayPrice($order->total_paid));
-        $table .= '</td>';
-        $table .=  '<td '.$tdStyle.'>';
-        $table .= $esc($carrier->name);
-        $table .= '</td>';
-        $table .=  '<td '.$tdStyle.'>';
-        $table .= $esc(Tools::displayPrice($order->total_shipping));
-        $table .= '</td>';
-        $table .= '</tr>';
-        $table .= '<table>';
-        $table .= '<hr>';
-        $table .= '<hr>';
-        // End other datas
-        $items .= $table;
-        return $items;
+
+        $this->context->smarty->assign(array(
+            'order_reference' => (string) $order->reference,
+            'customer_fullname' => trim($customer->firstname . ' ' . $customer->lastname),
+            'address_line' => trim($address->address1 . ' ' . $order->address2),
+            'address_postcode' => (string) $address->postcode,
+            'address_city' => (string) $address->city,
+            'address_phone' => (string) $address->phone,
+            'order_products' => $products,
+            'order_payment' => (string) $order->payment,
+            'order_date_add' => Tools::displayDate($order->date_add),
+            'order_total_paid' => Tools::displayPrice($order->total_paid),
+            'order_total_shipping' => Tools::displayPrice($order->total_shipping),
+            'carrier_name' => (string) $carrier->name,
+        ));
+
+        return $this->context->smarty->fetch(
+            $this->local_path . 'views/templates/hook/order_email_body.tpl'
+        );
     }
 
     public function createStoreAddressForCustomer($idStore, $idOrder)
