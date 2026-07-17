@@ -37,13 +37,16 @@ $sql[] = 'CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'everpsclickandcollect_s
     `id_product` int(11) NOT NULL,
     `id_product_attribute` int(11) NOT NULL,
     `id_shop` int(11) NOT NULL,
+    `id_vendor` int(11) UNSIGNED DEFAULT NULL,
     `qty` varchar(255) NOT NULL,
-    PRIMARY KEY  (`id_everpsclickandcollect_store_stock`)
+    PRIMARY KEY  (`id_everpsclickandcollect_store_stock`),
+    KEY `idx_ecc_stock_vendor_store` (`id_vendor`, `id_store`)
 ) ENGINE=' . _MYSQL_ENGINE_ . ' DEFAULT CHARSET=utf8;';
 
 $sql[] = 'CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'everpsclickandcollect_store` (
     `id_everpsclickandcollect_store` int(11) NOT NULL AUTO_INCREMENT,
     `id_store` int(11) NOT NULL,
+    `id_vendor` int(11) UNSIGNED DEFAULT NULL,
     `monday_open` varchar(255) DEFAULT NULL,
     `monday_close` varchar(255) DEFAULT NULL,
     `tuesday_open` varchar(255) DEFAULT NULL,
@@ -58,7 +61,8 @@ $sql[] = 'CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'everpsclickandcollect_s
     `saturday_close` varchar(255) DEFAULT NULL,
     `sunday_open` varchar(255) DEFAULT NULL,
     `sunday_close` varchar(255) DEFAULT NULL,
-    PRIMARY KEY  (`id_everpsclickandcollect_store`,`id_store`)
+    PRIMARY KEY  (`id_everpsclickandcollect_store`,`id_store`),
+    KEY `idx_ecc_store_vendor` (`id_vendor`)
 ) ENGINE=' . _MYSQL_ENGINE_ . ' DEFAULT CHARSET=utf8;';
 
 foreach ($sql as $query) {

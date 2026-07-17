@@ -24,6 +24,7 @@ class EverpsclickandcollectStoreStock extends ObjectModel
     public $id_product;
     public $id_product_attribute;
     public $id_shop;
+    public $id_vendor;
     public $qty;
 
     /**
@@ -48,6 +49,12 @@ class EverpsclickandcollectStoreStock extends ObjectModel
             'id_shop' => array(
                 'type' => self::TYPE_INT,
                 'validate' => 'isUnsignedId'
+            ),
+            'id_vendor' => array(
+                'type' => self::TYPE_INT,
+                'validate' => 'isUnsignedId',
+                'required' => false,
+                'allow_null' => true
             ),
             'qty' => array(
                 'type' => self::TYPE_INT,

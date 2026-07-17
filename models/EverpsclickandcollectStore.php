@@ -21,6 +21,7 @@ class EverpsclickandcollectStore extends ObjectModel
 {
     public $id;
     public $id_store;
+    public $id_vendor;
     public $monday_open;
     public $monday_close;
     public $tuesday_open;
@@ -47,6 +48,12 @@ class EverpsclickandcollectStore extends ObjectModel
                 'type' => self::TYPE_INT,
                 'validate' => 'isUnsignedId',
                 'required' => true
+            ),
+            'id_vendor' => array(
+                'type' => self::TYPE_INT,
+                'validate' => 'isUnsignedId',
+                'required' => false,
+                'allow_null' => true
             ),
             'monday_open' => array(
                 'type' => self::TYPE_STRING,
