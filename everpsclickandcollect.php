@@ -1579,22 +1579,63 @@ class Everpsclickandcollect extends CarrierModule
 
     private function importStockFromCsv()
     {
-        if (isset($_FILES['store_stock_file'])
-            && isset($_FILES['store_stock_file']['tmp_name'])
-            && !empty($_FILES['store_stock_file']['tmp_name'])
+        if (!isset($_FILES['store_stock_file'])
+            || !is_array($_FILES['store_stock_file'])
+            || ($_FILES['store_stock_file']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK
+            || !is_uploaded_file($_FILES['store_stock_file']['tmp_name'])
         ) {
-            $csvData = array_map('str_getcsv', file($_FILES['store_stock_file']['tmp_name']));
-            foreach ($csvData as $key => $line) {
-                if ($key == 0) {
-                    continue;
-                }
-                $line_datas = explode(';', $line[0]);
-                EverpsclickandcollectStoreStock::importStoreStock(
-                    $line_datas,
-                    (int) Context::getContext()->shop->id
-                );
-            }
+            $this->postErrors[] = $this->l('No valid CSV file uploaded');
+            return false;
         }
+
+        $tmpPath = (string) $_FILES['store_stock_file']['tmp_name'];
+        $originalName = (string) $_FILES['store_stock_file']['name'];
+        $size = (int) $_FILES['store_stock_file']['size'];
+        $maxSize = 5 * 1024 * 1024;
+
+        if ($size <= 0 || $size > $maxSize) {
+            $this->postErrors[] = $this->l('CSV file size is invalid (max 5 MB)');
+            return false;
+        }
+
+        if (strtolower(pathinfo($originalName, PATHINFO_EXTENSION)) !== 'csv') {
+            $this->postErrors[] = $this->l('Only .csv files are accepted');
+            return false;
+        }
+
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mime = $finfo->file($tmpPath);
+        $allowedMimes = array(
+            'text/csv',
+            'text/plain',
+            'application/csv',
+            'application/vnd.ms-excel',
+        );
+        if (!in_array($mime, $allowedMimes, true)) {
+            $this->postErrors[] = $this->l('CSV file has an invalid MIME type');
+            return false;
+        }
+
+        $handle = fopen($tmpPath, 'r');
+        if ($handle === false) {
+            $this->postErrors[] = $this->l('Unable to open CSV file');
+            return false;
+        }
+
+        $idShop = (int) Context::getContext()->shop->id;
+        $lineNumber = 0;
+        while (($line = fgetcsv($handle, 0, ';')) !== false) {
+            $lineNumber++;
+            if ($lineNumber === 1) {
+                continue;
+            }
+            EverpsclickandcollectStoreStock::importStoreStock(
+                $line,
+                $idShop
+            );
+        }
+        fclose($handle);
+
         $this->postSuccess[] = $this->l('Stores stock has been updated');
         return true;
     }
