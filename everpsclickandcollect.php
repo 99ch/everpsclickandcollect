@@ -1833,7 +1833,7 @@ class Everpsclickandcollect extends CarrierModule
         $this->context->smarty->assign(array(
             'order_reference' => (string) $order->reference,
             'customer_fullname' => trim($customer->firstname . ' ' . $customer->lastname),
-            'address_line' => trim($address->address1 . ' ' . $order->address2),
+            'address_line' => trim($address->address1 . ' ' . $address->address2),
             'address_postcode' => (string) $address->postcode,
             'address_city' => (string) $address->city,
             'address_phone' => (string) $address->phone,
