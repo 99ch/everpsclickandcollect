@@ -1518,9 +1518,6 @@ class Everpsclickandcollect extends CarrierModule
         $cart = new Cart(
             (int) $order->id_cart
         );
-        $customer = new Customer((int) $order->id_customer);
-        $orderLanguage = new Language((int) $order->id_lang);
-        $cartproducts = $cart->getProducts();
         $sql = new DbQuery;
         $sql->select('id_store');
         $sql->from(
@@ -1530,44 +1527,112 @@ class Everpsclickandcollect extends CarrierModule
             'id_cart = '.(int) $order->id_cart
         );
         $id_store = Db::getInstance()->getValue($sql);
-        $store = new Store(
+        $primaryStore = new Store(
             (int) $id_store
         );
         // Change order : set store address as delivery
-        if (Validate::isLoadedObject($store)) {
-            $this->createStoreAddressForCustomer($store->id, $order->id);
+        if (Validate::isLoadedObject($primaryStore)) {
+            $this->createStoreAddressForCustomer($primaryStore->id, $order->id);
         }
-        if (Validate::isLoadedObject($store)
-            && Validate::isEmail($store->email)
-            && in_array($orderStatus->id, $this->getValidatedOrderStates())
-        ) {
-            $items = $this->getOrderDatasForEmail($order);
-            // Send mail to store with all informations
-            $subject = $this->l('An order has been placed on your store');
-            $mail_dir = _PS_MODULE_DIR_ . $this->name.'/mails/';
-            Mail::send(
-                (int) Context::getContext()->language->id,
-                $this->name,
-                (string) $subject,
-                array(
-                    '{shop_name}' => Configuration::get('PS_SHOP_NAME'),
-                    '{shop_logo}' => _PS_IMG_DIR_ . Configuration::get(
-                        'PS_LOGO',
-                        null,
-                        null,
-                        (int) $order->id_shop
-                    ),
-                    '{message}' => $items,
+        if (!in_array($orderStatus->id, $this->getValidatedOrderStates())) {
+            return;
+        }
+
+        $vendorGroups = $this->splitCartByVendor($cart, $order);
+
+        if ($vendorGroups === null) {
+            if (Validate::isLoadedObject($primaryStore)
+                && Validate::isEmail($primaryStore->email)
+            ) {
+                $this->sendOrderEmailToStore($order, $primaryStore);
+            }
+            return;
+        }
+
+        foreach ($vendorGroups as $group) {
+            if (!is_array($group) || !isset($group['store'])) {
+                continue;
+            }
+            $groupStore = $group['store'] instanceof Store
+                ? $group['store']
+                : new Store((int) $group['store']);
+            if (!Validate::isLoadedObject($groupStore)
+                || !Validate::isEmail($groupStore->email)
+            ) {
+                continue;
+            }
+            $groupProducts = isset($group['products']) && is_array($group['products'])
+                ? $group['products']
+                : null;
+            $this->sendOrderEmailToStore($order, $groupStore, $groupProducts);
+        }
+    }
+
+    /**
+     * Laisse un module marketplace scinder le panier par vendeur pour la
+     * notification click & collect. Chaque module écoutant peut renvoyer
+     * un tableau au format :
+     *   [
+     *     'vendor_1' => ['store' => Store|int, 'products' => [ligneCart, ...]],
+     *     'vendor_2' => [...],
+     *   ]
+     *
+     * Renvoie null si aucun module ne prend en charge le split (fallback
+     * sur le comportement mono-magasin historique).
+     */
+    protected function splitCartByVendor(Cart $cart, Order $order)
+    {
+        $results = Hook::exec(
+            'actionSplitClickCollectCartByVendor',
+            array(
+                'cart' => $cart,
+                'order' => $order,
+            ),
+            null,
+            true
+        );
+
+        if (!is_array($results)) {
+            return null;
+        }
+
+        foreach ($results as $result) {
+            if (is_array($result) && !empty($result)) {
+                return $result;
+            }
+        }
+
+        return null;
+    }
+
+    protected function sendOrderEmailToStore(Order $order, Store $store, ?array $products = null)
+    {
+        $items = $this->getOrderDatasForEmail($order, $products);
+        $subject = $this->l('An order has been placed on your store');
+        $mail_dir = _PS_MODULE_DIR_ . $this->name . '/mails/';
+
+        Mail::send(
+            (int) Context::getContext()->language->id,
+            $this->name,
+            (string) $subject,
+            array(
+                '{shop_name}' => Configuration::get('PS_SHOP_NAME'),
+                '{shop_logo}' => _PS_IMG_DIR_ . Configuration::get(
+                    'PS_LOGO',
+                    null,
+                    null,
+                    (int) $order->id_shop
                 ),
-                (string) $store->email,
-                (string) Configuration::get('PS_SHOP_NAME'),
-                (string) Configuration::get('PS_SHOP_EMAIL'),
-                Configuration::get('PS_SHOP_NAME'),
-                null,
-                null,
-                $mail_dir
-            );
-        }
+                '{message}' => $items,
+            ),
+            (string) $store->email,
+            (string) Configuration::get('PS_SHOP_NAME'),
+            (string) Configuration::get('PS_SHOP_EMAIL'),
+            Configuration::get('PS_SHOP_NAME'),
+            null,
+            null,
+            $mail_dir
+        );
     }
 
     private function exportStoreStockToCsv()
@@ -1695,7 +1760,7 @@ class Everpsclickandcollect extends CarrierModule
         return $order_states;
     }
 
-    protected function getOrderDatasForEmail($order)
+    protected function getOrderDatasForEmail($order, ?array $products = null)
     {
         $cart = new Cart(
             (int) $order->id_cart
@@ -1709,6 +1774,9 @@ class Everpsclickandcollect extends CarrierModule
         $carrier = new Carrier(
             (int) $order->id_carrier
         );
+        if ($products === null) {
+            $products = $cart->getProducts();
+        }
         $esc = function ($value) {
             return Tools::safeOutput((string) $value);
         };
@@ -1778,7 +1846,7 @@ class Everpsclickandcollect extends CarrierModule
         $table .=  '</td>';
         $table .=  '</tr>';
         // Products infos on a loop
-        foreach ($cart->getProducts() as $product) {
+        foreach ($products as $product) {
             $table .= '<tr>';
             $table .=  '<td '.$tdStyle.'>';
             $table .= $esc($product['name']);
