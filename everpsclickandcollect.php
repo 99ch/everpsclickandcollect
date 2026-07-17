@@ -156,6 +156,9 @@ class Everpsclickandcollect extends CarrierModule
                 (int) Context::getContext()->shop->id
             );
         }
+        if (((bool)Tools::isSubmit('submitEverpsclickandcollectVendorMapping')) == true) {
+            $this->postProcessVendorMapping();
+        }
         if (count($this->postErrors)) {
             foreach ($this->postErrors as $error) {
                 $this->html .= $this->displayError($error);
@@ -178,9 +181,66 @@ class Everpsclickandcollect extends CarrierModule
             $this->html .= $this->context->smarty->fetch($this->local_path.'views/templates/admin/upgrade.tpl');
         }
         $this->html .= $this->renderForm();
+        $this->html .= $this->renderVendorMapping();
         $this->html .= $this->context->smarty->fetch($this->local_path.'views/templates/admin/footer.tpl');
 
         return $this->html;
+    }
+
+    protected function renderVendorMapping()
+    {
+        $langId = (int) $this->context->language->id;
+        $rawStores = Store::getStores($langId);
+        $mappingStores = array();
+        foreach ($rawStores as $store) {
+            $mappingStores[] = array(
+                'id_store' => (int) $store['id_store'],
+                'name' => (string) $store['name'],
+                'id_vendor' => EverpsclickandcollectStore::getVendor(
+                    (int) $store['id_store']
+                ),
+            );
+        }
+        $this->context->smarty->assign(array(
+            'vendor_mapping_stores' => $mappingStores,
+            'vendor_mapping_token' => Tools::getAdminTokenLite('AdminModules'),
+            'current_index' => $this->context->link->getAdminLink('AdminModules', false)
+                . '&configure=' . $this->name
+                . '&tab_module=' . $this->tab
+                . '&module_name=' . $this->name,
+        ));
+        return $this->context->smarty->fetch(
+            $this->local_path . 'views/templates/admin/vendor_mapping.tpl'
+        );
+    }
+
+    protected function postProcessVendorMapping()
+    {
+        $rawMap = Tools::getValue('vendor_map');
+        if (!is_array($rawMap)) {
+            $this->postErrors[] = $this->l('Invalid vendor mapping submission');
+            return;
+        }
+        $updated = 0;
+        foreach ($rawMap as $idStore => $idVendor) {
+            $idStore = (int) $idStore;
+            if ($idStore <= 0) {
+                continue;
+            }
+            $vendorValue = ($idVendor === '' || $idVendor === null)
+                ? null
+                : (int) $idVendor;
+            if ($vendorValue !== null && $vendorValue < 0) {
+                continue;
+            }
+            if (EverpsclickandcollectStore::setVendor($idStore, $vendorValue)) {
+                $updated++;
+            }
+        }
+        $this->postSuccess[] = sprintf(
+            $this->l('Vendor assignments updated (%d stores)'),
+            $updated
+        );
     }
 
     /**

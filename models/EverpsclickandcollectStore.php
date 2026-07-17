@@ -185,4 +185,54 @@ class EverpsclickandcollectStore extends ObjectModel
         }
         return false;
     }
+
+    /**
+     * Renvoie l'id_vendor associé à un magasin de retrait (ou null).
+     */
+    public static function getVendor($id_store)
+    {
+        $sql = new DbQuery();
+        $sql->select('id_vendor');
+        $sql->from('everpsclickandcollect_store');
+        $sql->where('id_store = ' . (int) $id_store);
+        $value = Db::getInstance()->getValue($sql);
+        if ($value === false || $value === null || $value === '') {
+            return null;
+        }
+        return (int) $value;
+    }
+
+    /**
+     * Persiste (INSERT ou UPDATE) l'assignation vendeur d'un magasin.
+     * $id_vendor à null détache le magasin de tout vendeur.
+     */
+    public static function setVendor($id_store, $id_vendor)
+    {
+        $id_store = (int) $id_store;
+        if ($id_store <= 0) {
+            return false;
+        }
+        $data = array(
+            'id_store' => $id_store,
+            'id_vendor' => ($id_vendor === null || $id_vendor === '')
+                ? null
+                : (int) $id_vendor,
+        );
+        $exists = (int) Db::getInstance()->getValue(
+            'SELECT id_everpsclickandcollect_store FROM `'
+            . _DB_PREFIX_ . 'everpsclickandcollect_store` '
+            . 'WHERE id_store = ' . $id_store
+        );
+        if ($exists > 0) {
+            return Db::getInstance()->update(
+                'everpsclickandcollect_store',
+                array('id_vendor' => $data['id_vendor']),
+                'id_store = ' . $id_store
+            );
+        }
+        return Db::getInstance()->insert(
+            'everpsclickandcollect_store',
+            $data
+        );
+    }
 }
